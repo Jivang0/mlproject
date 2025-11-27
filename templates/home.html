@@ -85,6 +85,7 @@
 
     <!-- Title -->
     <h2 class="text-center title mb-4">Enter Student Details</h2>
+   
 
     <!-- Student Image -->
     <div class="text-center mb-4">
@@ -92,6 +93,8 @@
              alt="Student Photo" 
              class="student-img">
     </div>
+
+    <h1 class="text-center title mb-1">You</h1>
 
     <!-- Form Card -->
     <div class="glass-card mx-auto" style="max-width: 800px;">
@@ -174,7 +177,7 @@
             <!-- Result -->
             {% if results %}
             <div class="result-box text-center mt-4">
-                <h4 class="mb-0">Predicted Score: <strong>{{ results }}</strong></h4>
+                <h4 class="mb-0">Predicted Math Score: <strong>{{ results }}</strong></h4>
             </div>
             {% endif %}
 
