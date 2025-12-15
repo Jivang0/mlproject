@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from src.pipeline.predict_pipeline import CustomData, PredictPipeline
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from datetime import datetime
 
 
 
@@ -33,10 +34,12 @@ class User(db.Model):
     name = db.Column(db.String(150),nullable=False)
     email = db.Column(db.String(150),nullable=False, unique=True)
     password = db.Column(db.String(150))
+    role = db.Column(db.String(50), default='user')
 
-    def __init__(self,name,email,password):
+    def __init__(self,name,email,password,role='user'):
         self.name = name
         self.email = email
+        self.role = role
         #Hash the password before storing it
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
 
@@ -49,13 +52,14 @@ with app.app_context():
 
 # ----------Routes for Web App----------------
 # Home Route
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', current_year=datetime.now().year)
 
 @app.route('/predict',methods=['GET','POST'])
 def predict_datapoint():
-    if 'email' not in session:
+    if 'email' not in session or session.get('role') != 'user':
         return redirect('/login')
     
     if request.method == 'GET':
@@ -104,6 +108,16 @@ def register():
     
     return render_template('register.html')
 
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if 'email'not in session or session.get('role') == 'admin':
+        return redirect('/login')
+    user = User.query.filter_by(email=session['email']).first()
+    
+    users = User.query.all()
+    return render_template('admin_dashboard.html', user=user,users=users)
+    
+      
 #Login Route
 
 @app.route('/login',methods=['GET','POST'])
@@ -118,19 +132,25 @@ def login():
             # session['name'] = user.name
             session['email'] = user.email
             session['name'] = user.name
-            return redirect('/predict')
+            session['role'] = user.role
+            return redirect('/dashboard')
         else:
-            return render_template('login.html', message="Invalid email or password")
+              return render_template('login.html', message="Invalid email or password")
     return render_template('login.html')
 
 # Dashboard Route    
 @app.route('/dashboard')
 def dashboard():
-    if 'email' in session:
-        user = User.query.filter_by(email=session['email']).first()
+    if 'email' not in session:
+        return redirect('/login')
+    user = User.query.filter_by(email=session['email']).first()
+    if user.role == 'admin':
+        users = User.query.all()
+        return render_template('admin_dashboard.html', user=user,users=users)
+    else:
         return render_template('dashboard.html',user = user)
     
-    return redirect('/login')
+    
 
 #Logout Route
 @app.route('/logout')
